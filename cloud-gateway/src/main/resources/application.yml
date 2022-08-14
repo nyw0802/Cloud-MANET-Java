@@ -1,0 +1,54 @@
+server:
+  port: 9191
+
+spring:
+  application:
+    name: API-GATEWAY
+  cloud:
+    gateway:
+      routes:
+        - id: NODE-SERVICE
+          uri: lb://NODE-SERVICE
+          predicates:
+            - Path=/node/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: NODE-SERVICE
+                fallbackuri: forward:/nodeServiceFallBack
+        - id: MANET-SERVICE
+          uri: lb://MANET-SERVICE
+          predicates:
+            - Path=/manet/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: MANET-SERVICE
+                fallbackuri: forward:/manetServiceFallBack
+
+
+hystrix:
+  command:
+    fallbackcmd:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 4000
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: hystrix.stream
+
+
+eureka:
+    instance:
+        preferIpAddress: true
+        hostname: eureka-0
+    client:
+        registerWithEureka: true
+        fetchRegistry: true
+        serviceUrl:
+            defaultZone: http://eureka-0.eureka.default.svc.cluster.local:8761/eureka
